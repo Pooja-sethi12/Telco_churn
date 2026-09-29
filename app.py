@@ -8,7 +8,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
 st.set_page_config(
-    page_title="ABC Ltd. - Customer Churn Evaluator", layout="wide"
+    page_title="Telco Ltd. - Customer Churn Evaluator", layout="wide"
 )
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
