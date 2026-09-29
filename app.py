@@ -75,9 +75,9 @@ def load_and_train_pipeline():
 
 pipeline = load_and_train_pipeline()
 
-st.title("📊 ABC Ltd. — Customer Retention Risk Predictor")
+st.title("📊 Telco Ltd.: Customer Retention Risk Predictor")
 st.markdown(
-    "Decision-support tool for non-technical account managers at **ABC Ltd.** to evaluate customer churn risk."
+    "Decision-support tool for non-technical account managers at **Telco Ltd.** to evaluate customer churn risk."
 )
 
 if pipeline is None:
