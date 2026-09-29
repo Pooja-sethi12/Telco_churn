@@ -1,33 +1,88 @@
 import os
-import joblib
 import numpy as np
 import pandas as pd
 import streamlit as st
+from sklearn.compose import ColumnTransformer
+from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import Pipeline
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
 
-st.set_page_config(page_title="Telco Ltd. - Customer Churn Evaluator", layout="wide")
+st.set_page_config(
+    page_title="ABC Ltd. - Customer Churn Evaluator", layout="wide"
+)
 
-# Determine absolute path to model.pkl in the same folder as app.py
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-MODEL_PATH = os.path.join(BASE_DIR, 'model.pkl')
+DATA_PATH = os.path.join(BASE_DIR, "Telco_churn.csv")
 
 
 @st.cache_resource
-def load_pipeline():
-    if os.path.exists(MODEL_PATH):
-        return joblib.load(MODEL_PATH)
-    return None
+def load_and_train_pipeline():
+    if not os.path.exists(DATA_PATH):
+        return None
+
+    # Load and clean Kaggle dataset
+    df_raw = pd.read_csv(DATA_PATH)
+    df_raw["TotalCharges"] = pd.to_numeric(
+        df_raw["TotalCharges"], errors="coerce"
+    )
+    df_raw = df_raw.dropna()
+
+    # Map to schema
+    df = pd.DataFrame({
+        "Tenure_Months": df_raw["tenure"],
+        "Monthly_Charges": df_raw["MonthlyCharges"],
+        "Contract_Type": df_raw["Contract"],
+        "Payment_Method": df_raw["PaymentMethod"],
+        "Paperless_Billing": df_raw["PaperlessBilling"],
+        "Tech_Support": df_raw["TechSupport"].replace(
+            {"No internet service": "No"}
+        ),
+        "Churn": df_raw["Churn"].map({"Yes": 1, "No": 0}),
+    })
+
+    X = df.drop(columns=["Churn"])
+    y = df["Churn"]
+
+    num_features = ["Tenure_Months", "Monthly_Charges"]
+    cat_features = [
+        "Contract_Type",
+        "Payment_Method",
+        "Paperless_Billing",
+        "Tech_Support",
+    ]
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ("num", StandardScaler(), num_features),
+            (
+                "cat",
+                OneHotEncoder(
+                    drop="first", handle_unknown="ignore", sparse_output=False
+                ),
+                cat_features,
+            ),
+        ]
+    )
+
+    pipeline = Pipeline([
+        ("preprocessor", preprocessor),
+        ("model", LogisticRegression(max_iter=1000)),
+    ])
+
+    pipeline.fit(X, y)
+    return pipeline
 
 
-pipeline = load_pipeline()
+pipeline = load_and_train_pipeline()
 
-st.title("📊 Telco Ltd. - Customer Retention Risk Predictor")
+st.title("📊 ABC Ltd. — Customer Retention Risk Predictor")
 st.markdown(
-    "Decision-support tool for non-technical account managers at **Telco Ltd.** to evaluate customer churn risk."
+    "Decision-support tool for non-technical account managers at **ABC Ltd.** to evaluate customer churn risk."
 )
 
 if pipeline is None:
     st.error(
-        f"`model.pkl` file not found at `{MODEL_PATH}`! Please ensure `model.pkl` is committed to GitHub."
+        f"`Telco_churn.csv` not found in repo! Please upload `Telco_churn.csv` to the main GitHub folder."
     )
     st.stop()
 
